@@ -21,6 +21,8 @@ jobs:
         uses: mathieudutour/github-tag-action@v4.6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Ensure NuGet Source
+        uses: fabriciomurta/ensure-nuget-source@v1
       - name: Run MSBuild
         if: ${{ success() }}
         run: msbuild -restore -target:build -property:Configuration=Release -property:VersionNumber=${{ steps.create-tag.outputs.new_version }}
