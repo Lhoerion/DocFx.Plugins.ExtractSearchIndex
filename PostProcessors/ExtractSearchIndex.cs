@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using DocFx.Plugins.ExtractSearchIndex.Lunr;
+
 namespace DocFx.Plugins.ExtractSearchIndex
 {
     using System;
@@ -25,7 +27,13 @@ namespace DocFx.Plugins.ExtractSearchIndex
         private static readonly Regex RegexWhiteSpace = new Regex(@"\s+", RegexOptions.Compiled);
 
         public string Name => nameof(ExtractSearchIndex);
-        public const string IndexFileName = "index.json";
+        public const string IndexFileName = "index";
+
+        public string LunrTokenSeparator;
+
+        public string LunrRef;
+
+        public Dictionary<string, object> LunrFields;
 
         public ImmutableDictionary<string, object> PrepareMetadata(ImmutableDictionary<string, object> metadata)
         {
@@ -33,6 +41,22 @@ namespace DocFx.Plugins.ExtractSearchIndex
             {
                 metadata = metadata.Add("_enableSearch", true);
             }
+
+            if (metadata.TryGetValue("_lunrTokenSeparator", out var lunrTokenSeparator))
+            {
+                LunrTokenSeparator = (string)lunrTokenSeparator;
+            }
+
+            if (metadata.TryGetValue("_lunrRef", out var lunrRef))
+            {
+                LunrRef = (string)lunrRef;
+            }
+
+            if (metadata.TryGetValue("_lunrFields", out var lunrFields))
+            {
+                LunrFields = (Dictionary<string, object>)lunrFields;
+            }
+
             return metadata;
         }
 
@@ -40,10 +64,10 @@ namespace DocFx.Plugins.ExtractSearchIndex
         {
             if (outputFolder == null)
             {
-                throw new ArgumentNullException("Base directory can not be null");
+                throw new ArgumentException("Base directory can not be null");
             }
             var indexData = new SortedDictionary<string, SearchIndexItem>();
-            var indexDataFilePath = Path.Combine(outputFolder, IndexFileName);
+            var indexDataFilePath = Path.Combine(outputFolder, IndexFileName + ".json");
             var htmlFiles = (from item in manifest.Files ?? Enumerable.Empty<ManifestItem>()
                 from output in item.OutputFiles
                 where item.DocumentType != "Toc" && output.Key.Equals(".html", StringComparison.OrdinalIgnoreCase)
@@ -79,7 +103,7 @@ namespace DocFx.Plugins.ExtractSearchIndex
                     }
                 }
             }
-            JsonUtility.Serialize(indexDataFilePath, indexData, Formatting.Indented);
+            JsonUtility.Serialize(indexDataFilePath, indexData);
 
             // add index.json to manifest as resource file
             var manifestItem = new ManifestItem
@@ -90,8 +114,45 @@ namespace DocFx.Plugins.ExtractSearchIndex
             {
                 RelativePath = PathUtility.MakeRelativePath(outputFolder, indexDataFilePath),
             });
-
             manifest.Files?.Add(manifestItem);
+
+            var lunrIndex = Lunr.Lunr.Main(builder =>
+            {
+                try
+                {
+                    var _ = Regex.IsMatch("__dummy__", LunrTokenSeparator);
+                    Utils.TokenSeparator = LunrTokenSeparator;
+                }
+                catch(ArgumentException)
+                {
+                    Logger.LogWarning("Warning: Invalid Lunr token separator provided, fallback to default");
+                }
+
+                builder.Ref(LunrRef);
+                foreach (var field in LunrFields)
+                {
+                    builder.Field(field.Key, field.Value.ToJsonString().FromJsonString<FieldRef.FieldMetadata>());
+                }
+
+                foreach (var doc in indexData)
+                {
+                    builder.Add(doc.Value, new FieldRef.FieldMetadata());
+                }
+            });
+            var indexDataFilePath2 = Path.Combine(outputFolder, IndexFileName + "_lunr.json");
+            JsonUtility.Serialize(indexDataFilePath2, lunrIndex.ToJson(), Formatting.Indented);
+
+            // add index_lunr.json to manifest as resource file
+            manifestItem = new ManifestItem
+            {
+                DocumentType = "Resource",
+            };
+            manifestItem.OutputFiles.Add("resource", new OutputFileInfo
+            {
+                RelativePath = PathUtility.MakeRelativePath(outputFolder, indexDataFilePath2),
+            });
+            manifest.Files?.Add(manifestItem);
+
             return manifest;
         }
 

@@ -44,6 +44,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommonBuildStep.cs" />
+    <Compile Include="Lunr\Builder.cs" />
+    <Compile Include="Lunr\FieldRef.cs" />
+    <Compile Include="Lunr\FieldVectorsConverter.cs" />
+    <Compile Include="Lunr\Index.cs" />
+    <Compile Include="Lunr\Lunr.cs" />
+    <Compile Include="Lunr\Pipeline.cs" />
+    <Compile Include="Lunr\Stemmer.cs" />
+    <Compile Include="Lunr\StopWordFilter.cs" />
+    <Compile Include="Lunr\Token.cs" />
+    <Compile Include="Lunr\Trimmer.cs" />
+    <Compile Include="Lunr\Utils.cs" />
+    <Compile Include="Lunr\Vector.cs" />
     <Compile Include="PostProcessors\ExtractSearchIndex.cs" />
     <Compile Include="PostProcessors\SearchIndexItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
