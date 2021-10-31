@@ -121,7 +121,7 @@ namespace DocFx.Plugins.ExtractSearchIndex
                 try
                 {
                     var _ = Regex.IsMatch("__dummy__", LunrTokenSeparator);
-                    Utils.TokenSeparator = LunrTokenSeparator;
+                    Tokenizer.TokenSeparator = LunrTokenSeparator;
                 }
                 catch(ArgumentException)
                 {

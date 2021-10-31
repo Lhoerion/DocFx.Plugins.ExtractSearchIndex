@@ -8,23 +8,27 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 {
     public class Builder
     {
+        private double _b = 0.75;
+
+        private double _k1 = 1.2;
+
         private string _ref = "id";
 
-        private Dictionary<string, FieldRef.FieldMetadata?> _fields = new Dictionary<string, FieldRef.FieldMetadata?>();
+        private readonly Dictionary<string, FieldRef.FieldMetadata?> _fields = new Dictionary<string, FieldRef.FieldMetadata?>();
 
-        private Dictionary<string, FieldRef.FieldMetadata> _documents = new Dictionary<string, FieldRef.FieldMetadata>();
+        private readonly Dictionary<string, FieldRef.FieldMetadata> _documents = new Dictionary<string, FieldRef.FieldMetadata>();
 
         public readonly Pipeline Pipeline = new Pipeline();
 
         public readonly Pipeline SearchPipeline = new Pipeline();
 
-        public Dictionary<FieldRef, Dictionary<Token, int>> FieldTermFrequencies = new Dictionary<FieldRef, Dictionary<Token, int>>();
+        public readonly Dictionary<FieldRef, Dictionary<Token, int>> FieldTermFrequencies = new Dictionary<FieldRef, Dictionary<Token, int>>();
 
-        public Dictionary<FieldRef, int> FieldLengths = new Dictionary<FieldRef, int>();
+        public readonly Dictionary<FieldRef, int> FieldLengths = new Dictionary<FieldRef, int>();
 
         public Dictionary<string, double> AverageFieldLength = new Dictionary<string, double>();
 
-        public Dictionary<Token, Dictionary<string, object>> InvertedIndex = new Dictionary<Token, Dictionary<string, object>>(new Token.EqualityComparer());
+        public readonly Dictionary<Token, Dictionary<string, dynamic>> InvertedIndex = new Dictionary<Token, Dictionary<string, dynamic>>(new Token.EqualityComparer());
 
         public Dictionary<FieldRef, Vector> FieldVectors = new Dictionary<FieldRef, Vector>(new FieldRef.EqualityComparer());
 
@@ -35,9 +39,22 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
         // ReSharper disable once CollectionNeverUpdated.Global
         public readonly List<string> MetadataWhitelist = new List<string>();
 
-        private double _b = 0.75;
+        // ReSharper disable once UnusedMember.Global
+        public void B(double n)
+        {
+            if (n < 0)
+                _b = 0;
+            else if (n > 1)
+                _b = 1;
+            else
+                _b = n;
+        }
 
-        private double _k1 = 1.2;
+        // ReSharper disable once UnusedMember.Global
+        public void K1(double n)
+        {
+            _k1 = n;
+        }
 
         public void Ref(string rRef) {
             _ref = rRef;
@@ -45,7 +62,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 
         public void Field(string fieldName, FieldRef.FieldMetadata? attributes)
         {
-            if (new Regex("\\/").IsMatch(fieldName))
+            if (new Regex(@"\/").IsMatch(fieldName))
             {
                 throw new Exception("Field '" + fieldName + "' contains illegal character '\\'.");
             }
@@ -60,12 +77,11 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
             _documents[docRef] = attributes;
             DocumentCount += 1;
 
-            for (var i = 0; i < fields.Count; i++)
+            foreach (var fieldName in fields)
             {
-                var fieldName = fields[i];
                 var extractor = _fields[fieldName]?.Extractor;
                 var field = extractor != null ? extractor(doc) : doc[fieldName];
-                var tokens = Utils.Tokenizer(field, new Dictionary<string, object>
+                var tokens = Tokenizer.Tokenize(field, new Dictionary<string, object>
                 {
                     {
                         "fields", new List<string>
@@ -96,22 +112,21 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 
                     if (!InvertedIndex.ContainsKey(term))
                     {
-                        var posting = new Dictionary<string, object>();
+                        var posting = new Dictionary<string, dynamic>();
                         posting["_index"] = TermIndex;
                         TermIndex += 1;
 
                         for (var k = 0; k < fields.Count; k++)
                         {
-                            posting[fields[k]] = new Dictionary<string, Dictionary<string, object>>();
+                            posting[fields[k]] = new Dictionary<string, object>();
                         }
 
                         InvertedIndex[term] = posting;
                     }
 
-                    if (!((Dictionary<string, dynamic>)InvertedIndex[term])[fieldName].ContainsKey(docRef))
+                    if (!InvertedIndex[term][fieldName].ContainsKey(docRef))
                     {
-                        ((Dictionary<string, dynamic>)InvertedIndex[term])[fieldName][docRef] =
-                            new Dictionary<string, object>();
+                        InvertedIndex[term][fieldName][docRef] = new Dictionary<string, object>();
                     }
 
                     for (var l = 0; l < MetadataWhitelist.Count; l++)
@@ -119,12 +134,11 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
                         var metadataKey = MetadataWhitelist[l];
                         var metadata = term.Metadata[metadataKey];
 
-                        if (!((Dictionary<string, dynamic>)InvertedIndex[term])[fieldName][docRef].ContainsKey(metadataKey)) {
-                            ((Dictionary<string, dynamic>)InvertedIndex[term])[fieldName][docRef][metadataKey] =
-                                new List<object>();
+                        if (!InvertedIndex[term][fieldName][docRef].ContainsKey(metadataKey)) {
+                            InvertedIndex[term][fieldName][docRef][metadataKey] = new List<object>();
                         }
 
-                        ((Dictionary<string, dynamic>)InvertedIndex[term])[fieldName][docRef][metadataKey].Add(metadata);
+                        InvertedIndex[term][fieldName][docRef][metadataKey].Add(metadata);
                     }
                 }
             }
@@ -147,7 +161,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
             for (var i = 0; i < numberOfFields; i++)
             {
                 var fieldRef = FieldRef.FromString(fieldRefs[i].ToString());
-                var field = fieldRef.FieldName; // ?
+                var field = fieldRef.FieldName;
 
                 if (!documentsWithField.ContainsKey(field))
                 {
@@ -202,7 +216,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 
                     if (!termIdfCache.ContainsKey(term))
                     {
-                        idf = Utils.Idf(InvertedIndex[term], DocumentCount);
+                        idf = Utils.InverseDocumentFrequency(InvertedIndex[term], DocumentCount);
                         termIdfCache[term] = idf;
                     }
                     else

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Microsoft.DocAsCode.MarkdownLite;
 
 namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 {
@@ -12,7 +11,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 
         private static string Porter(string w, object obj)
         {
-            return w.ReplaceRegex(R1, "").ReplaceRegex(R2, "");
+            return R2.Replace(R1.Replace(w, ""), "");
         }
 
         private static readonly Lazy<Trimmer> Lazy =

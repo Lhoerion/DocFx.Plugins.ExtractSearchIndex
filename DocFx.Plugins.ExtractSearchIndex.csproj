@@ -53,6 +53,7 @@
     <Compile Include="Lunr\Stemmer.cs" />
     <Compile Include="Lunr\StopWordFilter.cs" />
     <Compile Include="Lunr\Token.cs" />
+    <Compile Include="Lunr\Tokenizer.cs" />
     <Compile Include="Lunr\Trimmer.cs" />
     <Compile Include="Lunr\Utils.cs" />
     <Compile Include="Lunr\Vector.cs" />
