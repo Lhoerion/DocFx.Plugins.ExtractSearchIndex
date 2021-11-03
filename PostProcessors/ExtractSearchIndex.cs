@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using DocFx.Plugins.ExtractSearchIndex.Lunr;
-
 namespace DocFx.Plugins.ExtractSearchIndex
 {
     using System;
@@ -19,15 +17,12 @@ namespace DocFx.Plugins.ExtractSearchIndex
     using Microsoft.DocAsCode.Plugins;
 
     using HtmlAgilityPack;
-    using Newtonsoft.Json;
+    using Lunr;
 
     [Export(nameof(ExtractSearchIndex) + "Alt", typeof(IPostProcessor))]
     public class ExtractSearchIndex : IPostProcessor
     {
         private static readonly Regex RegexWhiteSpace = new Regex(@"\s+", RegexOptions.Compiled);
-
-        public string Name => nameof(ExtractSearchIndex);
-        public const string IndexFileName = "index";
 
         public string LunrTokenSeparator;
 
@@ -80,8 +75,9 @@ namespace DocFx.Plugins.ExtractSearchIndex
             {
                 throw new ArgumentException("Base directory can not be null");
             }
+
             var indexData = new SortedDictionary<string, SearchIndexItem>();
-            var indexDataFilePath = Path.Combine(outputFolder, IndexFileName + ".json");
+            var indexDataFilePath = Path.Combine(outputFolder, "index.json");
             var htmlFiles = (from item in manifest.Files ?? Enumerable.Empty<ManifestItem>()
                 from output in item.OutputFiles
                 where item.DocumentType != "Toc" && output.Key.Equals(".html", StringComparison.OrdinalIgnoreCase)
@@ -119,7 +115,6 @@ namespace DocFx.Plugins.ExtractSearchIndex
             }
             JsonUtility.Serialize(indexDataFilePath, indexData);
 
-            // add index.json to manifest as resource file
             var manifestItem = new ManifestItem
             {
                 DocumentType = "Resource",
@@ -188,7 +183,6 @@ namespace DocFx.Plugins.ExtractSearchIndex
             var indexDataFilePath2 = Path.Combine(outputFolder, "search-index.json");
             JsonUtility.Serialize(indexDataFilePath2, lunrIndex.ToJson());
 
-            // add index_lunr.json to manifest as resource file
             manifestItem = new ManifestItem
             {
                 DocumentType = "Resource",
@@ -211,9 +205,7 @@ namespace DocFx.Plugins.ExtractSearchIndex
                 return null;
             }
 
-            // Select content between the data-searchable class tag
             var nodes = html.DocumentNode.SelectNodes("//*[contains(@class,'data-searchable')]") ?? Enumerable.Empty<HtmlNode>();
-            // Select content between the article tag
             nodes = nodes.Union(html.DocumentNode.SelectNodes("//article") ?? Enumerable.Empty<HtmlNode>());
             foreach (var node in nodes)
             {
@@ -222,7 +214,7 @@ namespace DocFx.Plugins.ExtractSearchIndex
 
             var content = NormalizeContent(contentBuilder.ToString());
             var title = ExtractTitleFromHtml(html);
-            var langs = ExtractLanguagesFromHtml(html, item);
+            var langs = ExtractLanguagesFromHtml(item);
             var type = item.DocumentType == "Conceptual" ? "article" : "api";
 
             return new SearchIndexItem { Type = type, Href = href, Title = title, Keywords = content, Languages = langs};
@@ -235,18 +227,9 @@ namespace DocFx.Plugins.ExtractSearchIndex
             return NormalizeContent(originalTitle);
         }
 
-        private string ExtractLanguagesFromHtml(HtmlDocument html, ManifestItem item)
+        private string ExtractLanguagesFromHtml(ManifestItem item)
         {
-            if (item.DocumentType != "Conceptual") return NormalizeLanguages((List<string>)item.Metadata["langs"]);
-            var codeNodes = html.DocumentNode.SelectNodes("//*/pre/code");
-            if (codeNodes == null) return "";
-            return NormalizeLanguages(codeNodes.Select(FilterLanguages).Where(el => el != null));
-        }
-
-        private static string FilterLanguages(HtmlNode el)
-        {
-            var classList = el.Attributes["class"]?.Value.Split(' ');
-            return classList?.First(el2 => el2.StartsWith("lang-")).Substring(5);
+            return item.Metadata.TryGetValue("langs", out var langs) ? NormalizeLanguages((List<string>)langs) : string.Empty;
         }
 
         private string NormalizeLanguages(IEnumerable<string> list)
@@ -290,6 +273,11 @@ namespace DocFx.Plugins.ExtractSearchIndex
         private void ExtractTextFromNode(HtmlNode root, StringBuilder contentBuilder)
         {
             if (root == null)
+            {
+                return;
+            }
+
+            if (root.Attributes.Contains("data-noindex"))
             {
                 return;
             }

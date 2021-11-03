@@ -3,9 +3,11 @@ namespace DocFx.Plugins.ExtractSearchIndex
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Composition;
+    using System.Linq;
 
     using Microsoft.DocAsCode.Plugins;
 
+    [Export("ConceptualDocumentProcessor", typeof(IDocumentBuildStep))]
     [Export("ManagedReferenceDocumentProcessor", typeof(IDocumentBuildStep))]
     [Export("UniversalReferenceDocumentProcessor", typeof(IDocumentBuildStep))]
     [Export("TypeScriptReferenceDocumentProcessor", typeof(IDocumentBuildStep))]
@@ -23,16 +25,16 @@ namespace DocFx.Plugins.ExtractSearchIndex
         {
             foreach (var model in models)
             {
-                var list = new List<string>();
-                foreach (var item in ((dynamic) model.Content).Items)
+                if (model.Content is Dictionary<string, object> content)
                 {
-                    foreach (string el in item.SupportedLanguages)
-                    {
-                        if (list.Contains(el)) continue;
-                        list.Add(el);
-                    }
+                    if (!content.TryGetValue("langs", out var langs)) continue;
+                    model.ManifestProperties.langs = new List<string>(((object[])langs).Cast<string>());
                 }
-                model.ManifestProperties.langs = list;
+                else
+                {
+                    if (!((dynamic)model.Content).Metadata.TryGetValue("langs", out object langs)) continue;
+                    model.ManifestProperties.langs = new List<string>(((object[])langs).Cast<string>());
+                }
             }
         }
     }
