@@ -8,7 +8,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
     {
         public static Dictionary<string, Func<Token, int, List<Token>, object>> RegisteredFunctions = new Dictionary<string, Func<Token, int, List<Token>, object>>();
 
-        private Dictionary<string, Func<Token, int, List<Token>, object>> _stack = new Dictionary<string, Func<Token, int, List<Token>, object>>();
+        private SortedDictionary<string, Func<Token, int, List<Token>, object>> _stack = new SortedDictionary<string, Func<Token, int, List<Token>, object>>();
 
         public static void RegisterFunction(IFilter filter)
         {
@@ -38,6 +38,11 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
             {
                 _stack.Add(RegisteredFunctions.First((el) => el.Value == fn).Key, fn);
             }
+        }
+
+        public void Remove(Func<Token, int, List<Token>, object> fn)
+        {
+            _stack.Remove(RegisteredFunctions.First((el) => el.Value == fn).Key);
         }
 
         public List<Token> Run(List<Token> tokens)

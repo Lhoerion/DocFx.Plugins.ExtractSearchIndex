@@ -56,7 +56,8 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
             _k1 = n;
         }
 
-        public void Ref(string rRef) {
+        public void Ref(string rRef)
+        {
             _ref = rRef;
         }
 

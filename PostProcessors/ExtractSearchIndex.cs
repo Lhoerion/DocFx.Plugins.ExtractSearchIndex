@@ -35,6 +35,10 @@ namespace DocFx.Plugins.ExtractSearchIndex
 
         public Dictionary<string, object> LunrFields;
 
+        public List<string> LunrStopWords;
+
+        public List<string> LunrMetadataWhitelist;
+
         public ImmutableDictionary<string, object> PrepareMetadata(ImmutableDictionary<string, object> metadata)
         {
             if (!metadata.ContainsKey("_enableSearch"))
@@ -55,6 +59,16 @@ namespace DocFx.Plugins.ExtractSearchIndex
             if (metadata.TryGetValue("_lunrFields", out var lunrFields))
             {
                 LunrFields = (Dictionary<string, object>)lunrFields;
+            }
+
+            if (metadata.TryGetValue("_lunrStopWords", out var lunrStopWords))
+            {
+                LunrStopWords = (List<string>)lunrStopWords;
+            }
+
+            if (metadata.TryGetValue("_lunrStopWords", out var lunrMetadataWhitelist))
+            {
+                LunrMetadataWhitelist = (List<string>)lunrMetadataWhitelist;
             }
 
             return metadata;
@@ -118,6 +132,9 @@ namespace DocFx.Plugins.ExtractSearchIndex
 
             var lunrIndex = Lunr.Lunr.Main(builder =>
             {
+                builder.Pipeline.Remove(Stemmer.Instance.Run);
+                builder.SearchPipeline.Remove(Stemmer.Instance.Run);
+
                 try
                 {
                     var _ = Regex.IsMatch("__dummy__", LunrTokenSeparator);
@@ -125,13 +142,42 @@ namespace DocFx.Plugins.ExtractSearchIndex
                 }
                 catch(ArgumentException)
                 {
-                    Logger.LogWarning("Warning: Invalid Lunr token separator provided, fallback to default");
+                    Logger.LogWarning("[Lunr]Warning: Invalid token separator provided, fallback to default");
                 }
 
-                builder.Ref(LunrRef);
-                foreach (var field in LunrFields)
+                if (LunrStopWords != null)
                 {
-                    builder.Field(field.Key, field.Value.ToJsonString().FromJsonString<FieldRef.FieldMetadata>());
+                    StopWordFilter.CustomStopWords.AddRange(LunrStopWords);
+                }
+                else
+                {
+                    Logger.LogDiagnostic("[Lunr]No custom search stop words provided, skipping...");
+                }
+
+                if (LunrMetadataWhitelist != null)
+                {
+                    builder.MetadataWhitelist.AddRange(LunrMetadataWhitelist);
+                }
+                else
+                {
+                    Logger.LogDiagnostic("[Lunr]No metadata whitelist provided, skipping...");
+                }
+
+                if (!string.IsNullOrEmpty(LunrRef))
+                {
+                    builder.Ref(LunrRef);
+                }
+
+                if (LunrFields != null)
+                {
+                    foreach (var field in LunrFields)
+                    {
+                        builder.Field(field.Key, field.Value.ToJsonString().FromJsonString<FieldRef.FieldMetadata>());
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("[Lunr]No fields provided, this may yield strange results");
                 }
 
                 foreach (var doc in indexData)
@@ -139,8 +185,8 @@ namespace DocFx.Plugins.ExtractSearchIndex
                     builder.Add(doc.Value, new FieldRef.FieldMetadata());
                 }
             });
-            var indexDataFilePath2 = Path.Combine(outputFolder, IndexFileName + "_lunr.json");
-            JsonUtility.Serialize(indexDataFilePath2, lunrIndex.ToJson(), Formatting.Indented);
+            var indexDataFilePath2 = Path.Combine(outputFolder, "search-index.json");
+            JsonUtility.Serialize(indexDataFilePath2, lunrIndex.ToJson());
 
             // add index_lunr.json to manifest as resource file
             manifestItem = new ManifestItem
