@@ -127,9 +127,6 @@ namespace DocFx.Plugins.ExtractSearchIndex
 
             var lunrIndex = Lunr.Lunr.Main(builder =>
             {
-                builder.Pipeline.Remove(Stemmer.Instance.Run);
-                builder.SearchPipeline.Remove(Stemmer.Instance.Run);
-
                 try
                 {
                     var _ = Regex.IsMatch("__dummy__", LunrTokenSeparator);
