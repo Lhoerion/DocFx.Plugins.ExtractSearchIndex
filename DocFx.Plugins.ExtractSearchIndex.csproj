@@ -58,6 +58,7 @@
     <Compile Include="Lunr\Utils.cs" />
     <Compile Include="Lunr\Vector.cs" />
     <Compile Include="PostProcessors\ExtractSearchIndex.cs" />
+    <Compile Include="PostProcessors\SearchIndex.cs" />
     <Compile Include="PostProcessors\SearchIndexItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <ContentWithTargetPath Include="template\**">

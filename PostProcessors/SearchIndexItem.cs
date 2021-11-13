@@ -1,11 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace DocFx.Plugins.ExtractSearchIndex
 {
-    using System.Collections.Generic;
-    using Newtonsoft.Json;
-
     public class SearchIndexItem : Dictionary<string, string>
     {
         [JsonProperty("href")]
@@ -26,16 +23,16 @@ namespace DocFx.Plugins.ExtractSearchIndex
             set => base["title"] = value;
         }
 
-        [JsonProperty("keywords")]
+        [JsonProperty("keyword")]
         public string Keywords {
-            get => base["keywords"];
-            set => base["keywords"] = value;
+            get => base["keyword"];
+            set => base["keyword"] = value;
         }
 
-        [JsonProperty("langs")]
+        [JsonProperty("lang")]
         public string Languages {
-            get => base["langs"];
-            set => base["langs"] = value;
+            get => base["lang"];
+            set => base["lang"] = value;
         }
     }
 }

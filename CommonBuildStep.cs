@@ -1,16 +1,16 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Composition;
+using System.Linq;
+using Microsoft.DocAsCode.Plugins;
+
 namespace DocFx.Plugins.ExtractSearchIndex
 {
-    using System.Collections.Generic;
-    using System.Collections.Immutable;
-    using System.Composition;
-    using System.Linq;
-
-    using Microsoft.DocAsCode.Plugins;
-
     [Export("ConceptualDocumentProcessor", typeof(IDocumentBuildStep))]
     [Export("ManagedReferenceDocumentProcessor", typeof(IDocumentBuildStep))]
     [Export("UniversalReferenceDocumentProcessor", typeof(IDocumentBuildStep))]
     [Export("TypeScriptReferenceDocumentProcessor", typeof(IDocumentBuildStep))]
+    // ReSharper disable once UnusedType.Global
     public class CommonBuildStep : IDocumentBuildStep
     {
         public int BuildOrder => 0;
