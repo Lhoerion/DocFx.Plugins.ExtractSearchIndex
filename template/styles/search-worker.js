@@ -1,5 +1,5 @@
 (function () {
-  importScripts('lunr.min.js');
+  importScripts('https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.9/lunr.min.js');
 
   var lunrIndex;
 
@@ -17,24 +17,28 @@
 
     searchIndexRequest.send();
   }
+
   searchIndexRequest.open('GET', '../search-index.json');
   searchIndexRequest.onload = function () {
     if (this.status !== 200) {
       return;
     }
-    lunrIndex = lunr.Index.load(JSON.parse(resp));
+    lunrIndex = lunr.Index.load(JSON.parse(this.responseText));
 
     postMessage({ e: 'index-ready' });
   }
-  searchIndexRequest.send();
+
+  searchDataRequest.send();
 
   onmessage = function (oEvent) {
     var q = oEvent.data.q;
-    var hits = lunrIndex.search(q);
+    var hits = lunrIndex.search(q.split(/\s+/g).map(term => {
+      return !term.startsWith('-') ? (!term.startsWith('+') ? '+' + term : term.substring(1)) : term;
+    }).join(' '));
     var results = [];
-    hits.forEach(function (hit) {
-      var item = searchData[hit.ref];
-      results.push({ 'type': item.type, 'href': item.href, 'title': item.title, 'keywords': item.keywords, 'langs': item.langs });
+    hits.sort((a, b) => (searchData[a.ref].type > searchData[b.ref].type) - (searchData[a.ref].type < searchData[b.ref].type));
+    hits.forEach(function(hit) {
+      results.push(searchData[hit.ref]);
     });
     postMessage({ e: 'query-ready', q: q, d: results });
   }
