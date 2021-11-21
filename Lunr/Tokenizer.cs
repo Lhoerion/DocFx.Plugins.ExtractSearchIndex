@@ -9,8 +9,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 
         public static List<Token> Tokenize(string field, Dictionary<string, object> metadata)
         {
-            var str = field.ToLower();
-            var len = str.Length;
+            var len = field.Length;
             var tokens = new List<Token>();
             for (int sliceEnd = 0, sliceStart = 0; sliceEnd <= len; sliceEnd++)
             {
@@ -27,7 +26,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
                     tokenMetadata["position"] = new [] { sliceStart, sliceLength };
                     tokenMetadata["index"] = tokens.Count;
 
-                    tokens.Add(new Token(str.Substring(sliceStart, sliceLength), tokenMetadata));
+                    tokens.Add(new Token(field.Substring(sliceStart, sliceLength).ToLower(), tokenMetadata));
                 }
 
                 sliceStart = sliceEnd + 1;
