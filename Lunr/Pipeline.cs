@@ -23,26 +23,26 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
             RegisteredFunctions[label] = filter.Run;
         }
 
-        public static void WarnIfFunctionNotRegistered(KeyValuePair<string, Func<Token, int, List<Token>, object>> fn)
+        private static void WarnIfFunctionNotRegistered(KeyValuePair<string, Func<Token, int, List<Token>, object>> fn)
         {
             var isRegistered = RegisteredFunctions.ContainsKey(fn.Key);
             if (!isRegistered)
             {
-                Console.WriteLine("Overwriting extisting registered function: " + fn.Key);
+                Console.WriteLine("Overwriting existing registered function: " + fn.Key);
             }
         }
 
-        public void Add(List<Func<Token, int, List<Token>, object>> list)
+        public void Add(params Func<Token, int, List<Token>, object>[] list)
         {
             foreach (var fn in list)
             {
-                _stack.Add(RegisteredFunctions.First((el) => el.Value == fn).Key, fn);
+                _stack.Add(RegisteredFunctions.First(el => el.Value == fn).Key, fn);
             }
         }
 
         public void Remove(Func<Token, int, List<Token>, object> fn)
         {
-            _stack.Remove(RegisteredFunctions.First((el) => el.Value == fn).Key);
+            _stack.Remove(RegisteredFunctions.First(el => el.Value == fn).Key);
         }
 
         public List<Token> Run(List<Token> tokens)

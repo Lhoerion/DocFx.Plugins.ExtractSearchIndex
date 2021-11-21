@@ -88,23 +88,21 @@ namespace DocFx.Plugins.ExtractSearchIndex
                 var html = new HtmlDocument();
                 Logger.LogDiagnostic($"Extracting index data from {filePath}");
 
-                if (EnvironmentContext.FileAbstractLayer.Exists(filePath))
+                if (!EnvironmentContext.FileAbstractLayer.Exists(filePath)) continue;
+                try
                 {
-                    try
-                    {
-                        using var stream = EnvironmentContext.FileAbstractLayer.OpenRead(filePath);
-                        html.Load(stream, Encoding.UTF8);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogWarning($"Warning: Can't load content from {filePath}: {ex.Message}");
-                        continue;
-                    }
-                    var indexItem = SearchIndex.ExtractItem(html, relativePath, item);
-                    if (indexItem != null)
-                    {
-                        indexData[relativePath] = indexItem;
-                    }
+                    using var stream = EnvironmentContext.FileAbstractLayer.OpenRead(filePath);
+                    html.Load(stream, Encoding.UTF8);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning($"Warning: Can't load content from {filePath}: {ex.Message}");
+                    continue;
+                }
+                var indexItem = SearchIndex.ExtractItem(html, relativePath, item);
+                if (indexItem != null)
+                {
+                    indexData[relativePath] = indexItem;
                 }
             }
             JsonUtility.Serialize(indexDataPath, indexData);

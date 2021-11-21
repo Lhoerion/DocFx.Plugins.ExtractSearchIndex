@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 {
-    public class Tokenizer
+    public static class Tokenizer
     {
         public static string TokenSeparator = @"[\s\-]+";
 
@@ -13,10 +13,10 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
             var tokens = new List<Token>();
             for (int sliceEnd = 0, sliceStart = 0; sliceEnd <= len; sliceEnd++)
             {
-                var c = (sliceEnd != len ? str[sliceEnd].ToString() : "");
+                var c = sliceEnd != len ? field[sliceEnd].ToString() : "";
                 var sliceLength = sliceEnd - sliceStart;
 
-                if (!Regex.IsMatch(c, TokenSeparator) && sliceEnd != len) continue;
+                if (!Regex.IsMatch( c, TokenSeparator) && sliceEnd != len) continue;
 
                 if (sliceLength > 0)
                 {
