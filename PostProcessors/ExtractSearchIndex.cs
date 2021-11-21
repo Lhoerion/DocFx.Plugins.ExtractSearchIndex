@@ -147,6 +147,10 @@ namespace DocFx.Plugins.ExtractSearchIndex
                     Logger.LogDiagnostic("[Lunr]No metadata whitelist provided, skipping...");
                 }
 
+                builder.Pipeline.Add(
+                    CapitalizedWordSplitter.Instance.Run
+                );
+
                 if (!string.IsNullOrEmpty(_lunrRef))
                 {
                     builder.Ref(_lunrRef);

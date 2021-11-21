@@ -25,6 +25,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
                         : new Dictionary<string, object>();
                     tokenMetadata["position"] = new [] { sliceStart, sliceLength };
                     tokenMetadata["index"] = tokens.Count;
+                    tokenMetadata["valueParent"] = field.Substring(sliceStart, sliceLength);
 
                     tokens.Add(new Token(field.Substring(sliceStart, sliceLength).ToLower(), tokenMetadata));
                 }
