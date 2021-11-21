@@ -6,9 +6,9 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
 {
     public class Pipeline
     {
-        public static Dictionary<string, Func<Token, int, List<Token>, object>> RegisteredFunctions = new Dictionary<string, Func<Token, int, List<Token>, object>>();
+        private static readonly Dictionary<string, Func<Token, int, List<Token>, object>> RegisteredFunctions = new Dictionary<string, Func<Token, int, List<Token>, object>>();
 
-        private SortedDictionary<string, Func<Token, int, List<Token>, object>> _stack = new SortedDictionary<string, Func<Token, int, List<Token>, object>>();
+        private readonly Dictionary<string, Func<Token, int, List<Token>, object>> _stack = new Dictionary<string, Func<Token, int, List<Token>, object>>();
 
         public static void RegisterFunction(IFilter filter)
         {
