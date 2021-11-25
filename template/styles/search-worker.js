@@ -1,4 +1,4 @@
-self.importScripts('https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.9/lunr.min.js');
+importScripts('https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.9/lunr.min.js');
 
 let lunrIndex;
 
@@ -39,5 +39,5 @@ onmessage = function (ev) {
   hits.forEach(function (hit) {
     results.push(searchData[hit.ref]);
   });
-  self.postMessage({e: 'query-ready', q: q, d: results}, '*');
+  postMessage({e: 'query-ready', q: q, d: results});
 }
