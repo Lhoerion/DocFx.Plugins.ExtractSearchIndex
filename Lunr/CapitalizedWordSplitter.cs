@@ -34,7 +34,7 @@ namespace DocFx.Plugins.ExtractSearchIndex.Lunr
                 {
                     match1.AddRange(match2.Captures.Cast<Capture>());
                     return match1;
-                }).Select((el, j) => Tokenize(el, j, token, list.Count));
+                }).Select((el, j) => Tokenize(el, j, token, list.Count)).Append(token);
         }
 
         private static Token Tokenize(Capture el, int i, Token originalToken, int ctx)
