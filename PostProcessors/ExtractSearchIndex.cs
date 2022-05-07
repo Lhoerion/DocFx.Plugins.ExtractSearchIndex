@@ -20,6 +20,10 @@ namespace DocFx.Plugins.ExtractSearchIndex
     {
         private string _lunrTokenSeparator;
 
+        private double? _lunrSimilarityB;
+
+        private double? _lunrSimilarityK1;
+
         private string _lunrRef;
 
         private Dictionary<string, object> _lunrFields;
@@ -38,6 +42,16 @@ namespace DocFx.Plugins.ExtractSearchIndex
             if (metadata.TryGetValue("_lunrTokenSeparator", out var lunrTokenSeparator))
             {
                 _lunrTokenSeparator = (string)lunrTokenSeparator;
+            }
+            
+            if (metadata.TryGetValue("_lunrSimilarityB", out var lunrSimilarityB))
+            {
+                _lunrSimilarityB = (double)lunrSimilarityB;
+            }
+            
+            if (metadata.TryGetValue("_lunrSimilarityK1", out var lunrSimilarityK1))
+            {
+                _lunrSimilarityK1 = (double)lunrSimilarityK1;
             }
 
             if (metadata.TryGetValue("_lunrRef", out var lunrRef))
@@ -136,6 +150,37 @@ namespace DocFx.Plugins.ExtractSearchIndex
                 else
                 {
                     Logger.LogDiagnostic("[Lunr]No custom search stop words provided, skipping...");
+                }
+                
+                if (_lunrSimilarityB != null)
+                {
+                    if (_lunrSimilarityB.Value >= 0.0D)
+                    {
+                        if (_lunrSimilarityB.Value <= 1.0D)
+                        {
+                            builder.B(_lunrSimilarityB.Value);
+                        }
+                        else
+                        {
+                            Logger.LogWarning("[Lunr]Warning: Invalid similarity B parameter provided, value must be a normalized value between 0 and 1, resetting to 1"); }
+                    }
+                    else
+                    {
+                        Logger.LogWarning("[Lunr]Warning: Invalid similarity B parameter provided, value must be a normalized value between 0 and 1, resetting to 0");
+                    }
+                }
+                else
+                {
+                    Logger.LogDiagnostic("[Lunr]No custom similarity B parameter provided, skipping...");
+                }
+                
+                if (_lunrSimilarityK1 != null)
+                {
+                    builder.K1(_lunrSimilarityK1.Value);
+                }
+                else
+                {
+                    Logger.LogDiagnostic("[Lunr]No custom similarity K1 parameter provided, skipping...");
                 }
 
                 if (_lunrMetadataWhitelist != null)
